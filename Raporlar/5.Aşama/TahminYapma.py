@@ -99,52 +99,54 @@ def HKICalculate (SO2, NO2, O3, PM10):
 
     
     return seviye
+
+dataset = pd.read_csv('HavaKalitesi.csv', encoding = 'iso-8859-9') 
+
+# Veriler farklı dataframelere bölündü
+haftaIci = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
+haftaSonu = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
+yaz = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
+kis = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
+sonbahar = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
+ilkbahar = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
+
+for i in range(len(dataset)):
+    tarih = dataset["Tarih"][i].split("/")
+    tarihNo= datetime.datetime(int(tarih[2]), int(tarih[0]), int(tarih[1])).weekday()
+    #HKİ Sonucu
+    hki=HKICalculate( dataset.iloc[i]["SO2"], dataset.iloc[i]["NO2"], dataset.iloc[i]["O3"], dataset.iloc[i]["PM10"])
+    
+    # Haftaiçi Haftasonu Kontrolü
+    if(tarihNo<5):
+        haftaIci.loc[dataset.index[i]] = dataset.iloc[i]
+        haftaIci["HKI"][i] = hki
+    else :
+        haftaSonu.loc[dataset.index[i]] = dataset.iloc[i]
+        haftaSonu["HKI"][i] = hki
+    # Yaz Kış İlkbahar Sonbahar Kontrolü
+    if(int(tarih[0]) in [12,1,2]):
+        kis.loc[dataset.index[i]] = dataset.iloc[i]
+        kis["HKI"][i] = hki
+    elif(int(tarih[0]) in [3,4,5]):
+        ilkbahar.loc[dataset.index[i]] = dataset.iloc[i]
+        ilkbahar["HKI"][i] = hki
+    elif(int(tarih[0]) in [6,7,8]):
+        yaz.loc[dataset.index[i]] = dataset.iloc[i]
+        yaz["HKI"][i] = hki
+    else:
+        sonbahar.loc[dataset.index[i]] = dataset.iloc[i]
+        sonbahar["HKI"][i] = hki
     
 @app.route ('/',methods=['GET'])
 def index():
 
-   return "selam" 
+   return "Hello Word" 
 
 
    
 @app.route ('/analiz',methods=['GET'])
 def analiz():
-    dataset = pd.read_csv('HavaKalitesi.csv', encoding = 'iso-8859-9') 
-
-    # Veriler farklı dataframelere bölündü
-    haftaIci = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
-    haftaSonu = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
-    yaz = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
-    kis = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
-    sonbahar = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
-    ilkbahar = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
-
-    for i in range(len(dataset)):
-        tarih = dataset["Tarih"][i].split("/")
-        tarihNo= datetime.datetime(int(tarih[2]), int(tarih[0]), int(tarih[1])).weekday()
-        #HKİ Sonucu
-        hki=HKICalculate( dataset.iloc[i]["SO2"], dataset.iloc[i]["NO2"], dataset.iloc[i]["O3"], dataset.iloc[i]["PM10"])
-        
-        # Haftaiçi Haftasonu Kontrolü
-        if(tarihNo<5):
-            haftaIci.loc[dataset.index[i]] = dataset.iloc[i]
-            haftaIci["HKI"][i] = hki
-        else :
-            haftaSonu.loc[dataset.index[i]] = dataset.iloc[i]
-            haftaSonu["HKI"][i] = hki
-        # Yaz Kış İlkbahar Sonbahar Kontrolü
-        if(int(tarih[0]) in [12,1,2]):
-            kis.loc[dataset.index[i]] = dataset.iloc[i]
-            kis["HKI"][i] = hki
-        elif(int(tarih[0]) in [3,4,5]):
-            ilkbahar.loc[dataset.index[i]] = dataset.iloc[i]
-            ilkbahar["HKI"][i] = hki
-        elif(int(tarih[0]) in [6,7,8]):
-            yaz.loc[dataset.index[i]] = dataset.iloc[i]
-            yaz["HKI"][i] = hki
-        else:
-            sonbahar.loc[dataset.index[i]] = dataset.iloc[i]
-            sonbahar["HKI"][i] = hki
+    
     yazOrt = yaz.mean().to_json()
     kisOrt=kis.mean().to_json()
     ilkOrt=ilkbahar.mean().to_json()
