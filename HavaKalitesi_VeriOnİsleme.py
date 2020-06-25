@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Fri Apr 24 01:45:23 2020
 
+@author: Gizem ÇOBAN
+"""
 # Kullanılacak kütüphanelerin import edilmesi
 import numpy as np
 import matplotlib.pyplot as plt
