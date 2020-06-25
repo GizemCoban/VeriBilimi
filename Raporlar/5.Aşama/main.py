@@ -14,10 +14,9 @@ import datetime
 import random
 import numpy as np
 import json
-from flask_cors import CORS
 
 app=Flask(__name__)
-CORS(app)
+
 MODEL_PATH='model.h5'
 
 #kaydedilmiş modeli yükle
@@ -28,14 +27,6 @@ loaded_model = model_from_json(loaded_model_json)
 loaded_model.load_weights(MODEL_PATH)
 
 print("Model Yüklendi")
-
-#Tahminin yapıldığı kısım
-def model_predict(model):
-   
-    preds=model.predict_classes([[0]])#predict([[0,0,0,0,0,0,0,0,0,0,0]])
-    print(preds)
-    return preds
-
 def HKICalculate (SO2, NO2, O3, PM10):
     seviyeSO2=0
     seviyeNO2=0
@@ -100,7 +91,7 @@ def HKICalculate (SO2, NO2, O3, PM10):
 
     
     return seviye
-
+    
 dataset = pd.read_csv('HavaKalitesi.csv', encoding = 'iso-8859-9') 
 
 # Veriler farklı dataframelere bölündü
@@ -110,14 +101,13 @@ yaz = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3
 kis = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
 sonbahar = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
 ilkbahar = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
-havaKalitesiDF = pd.DataFrame(columns=["Tarih","PM10","PM10Debi","SO2","NO2","NOX","NO","O3","HavaSicakligi","RuzgarHizi","BagilNem","HavaBasinc","HKI"])
+
 for i in range(len(dataset)):
     tarih = dataset["Tarih"][i].split("/")
     tarihNo= datetime.datetime(int(tarih[2]), int(tarih[0]), int(tarih[1])).weekday()
     #HKİ Sonucu
     hki=HKICalculate( dataset.iloc[i]["SO2"], dataset.iloc[i]["NO2"], dataset.iloc[i]["O3"], dataset.iloc[i]["PM10"])
-    havaKalitesiDF.loc[dataset.index[i]] = dataset.iloc[i]
-    havaKalitesiDF["HKI"][i] = hki
+    
     # Haftaiçi Haftasonu Kontrolü
     if(tarihNo<5):
         haftaIci.loc[dataset.index[i]] = dataset.iloc[i]
@@ -138,16 +128,19 @@ for i in range(len(dataset)):
     else:
         sonbahar.loc[dataset.index[i]] = dataset.iloc[i]
         sonbahar["HKI"][i] = hki
-    
+
+def model_predict(model):
+   
+    preds=model.predict_classes([[14]])#predict([[0,0,0,0,0,0,0,0,0,0,0]])
+    print(preds)
+    return str(preds[0])
+
+
 @app.route ('/',methods=['GET'])
 def index():
 
    return "selam" 
 
-@app.route ('/predict',methods=['GET'])
-def test():
-    preds=model_predict(loaded_model)
-    return preds
 
    
 @app.route ('/analiz',methods=['GET'])
@@ -161,20 +154,12 @@ def analiz():
     haftasonuOrt=haftaSonu.mean().to_json()        
     res = {"yaz":yazOrt,"kis":kisOrt, "ilkbahar":ilkOrt,"sonbahar":sonOrt, "haftasonu":haftasonuOrt,"haftaici":haftaiciOrt}
     return res 
-
-
-
-
-@app.route ('/tahmin',methods=['GET'])
-def tahmin():
-    d = request.args.get('d')
-    m = request.args.get('m')
-    date = str(m)+"/"+str(d)+"/2019"
-    res = havaKalitesiDF[havaKalitesiDF.Tarih == date]
-    
-    return {"data":res.mean().to_json()}
+@app.route ('/test',methods=['GET'])
+def test():
+    preds=model_predict(loaded_model)
+    return preds
     
 if __name__=='__main__':
     app.run()
-    http_server=WSGIServer(('',5000),app)
-    http_server.serve_forever()
+    #http_server=WSGIServer(('',5000),app)
+    #http_server.serve_forever()
